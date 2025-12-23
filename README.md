@@ -48,22 +48,32 @@ data/raw/pr_commit_details.parquet
 
 3. Run scripts in order:
 ・RQ1：Find the number of commits to analyze：
+```bash
 python src/1_get_commitNum.py
+```
 ・RQ2：Extract commit-level data:
+```bash
 python src/2_get_commitsList.py
+```
 ・RQ2：Randomly sample the extracted data:
+```bash
 python src/3_get_commitsList_231.py
+```
 ・RQ3：Calculate readability metrics:
+```bash
 python src/4_download_commits.py
+```
 ・RQ3：Perform statistical analysis:
+```bash
 python src/5_get_analysis.py
+```
 
-4. Outputs
-Script	Output File / Directory	Description
-src/1_get_commitNum.py	-	Number of commits selected for analysis
-src/2_get_commitsList.py	data/processed/filtered_commits.csv	Full list of commits extracted
-				data/processed/filtered_commits.parquet
-src/3_get_commitsList_231.py	data/results/filtered_commits_231.csv	Randomly sampled commit list
-src/4_download_commits.py	data/processed/commit_summary_readability_3metrics.csv	Readability metrics per commit
-src/5_get_analysis.py	-	Statistical test results (Wilcoxon)
+5. Outputs
+| Script                        | Output File / Directory                                      | Description                                   |
+|--------------------------------|-------------------------------------------------------------|-----------------------------------------------|
+| `src/1_get_commitNum.py`       | -                                                           | Number of commits selected for analysis      |
+| `src/2_get_commitsList.py`     | `data/processed/filtered_commits.csv` <br> `data/processed/filtered_commits.parquet` | Full list of commits extracted               |
+| `src/3_get_commitsList_231.py` | `data/results/filtered_commits_231.csv`                     | Randomly sampled commit list                  |
+| `src/4_download_commits.py`    | `data/processed/commit_summary_readability_3metrics.csv`   | Readability metrics per commit                |
+| `src/5_get_analysis.py`        | -                                                           | Statistical test results (Wilcoxon)          |
 
