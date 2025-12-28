@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 from scipy.stats import wilcoxon
-from pathlib import Path
 
 # -----------------------------
 # データ読み込み
@@ -31,9 +30,23 @@ print()
 # r = Z / sqrt(N)
 # -----------------------------
 def wilcoxon_effect_size(before, after):
-    stat, p = wilcoxon(before, after)
-    n = len(before)
-    z = (stat - n * (n + 1) / 4) / np.sqrt(n * (n + 1) * (2 * n + 1) / 24)
+    """
+    Calculate effect size r for Wilcoxon signed-rank test.
+    r = Z / sqrt(N)
+    """
+    diff = after - before
+    n = np.sum(diff != 0)  # Number of non-zero differences
+
+    # Edge case: no non-zero differences
+    if n == 0:
+        return np.nan, np.nan
+
+    # Use method='approx' to get z-statistic directly (scipy >= 1.9.0)
+    # wilcoxon(after, before) so positive z means after > before
+    result = wilcoxon(after, before, method='approx')
+    z = result.zstatistic
+    p = result.pvalue
+
     r = z / np.sqrt(n)
     return r, p
 
@@ -67,19 +80,19 @@ print()
 # -----------------------------
 # 改善・悪化割合
 # -----------------------------
-n = len(df)
+n_commits = len(df)
 
 # MI：増加が改善
-mi_improve = (df["mi_diff_avg"] > 0).sum() / n
-mi_worsen  = (df["mi_diff_avg"] < 0).sum() / n
+mi_improve = (df["mi_diff_avg"] > 0).sum() / n_commits
+mi_worsen  = (df["mi_diff_avg"] < 0).sum() / n_commits
 
 # CC：減少が改善
-cc_improve = (df["cc_diff_avg"] < 0).sum() / n
-cc_worsen  = (df["cc_diff_avg"] > 0).sum() / n
+cc_improve = (df["cc_diff_avg"] < 0).sum() / n_commits
+cc_worsen  = (df["cc_diff_avg"] > 0).sum() / n_commits
 
 # LOC：減少が改善
-loc_improve = (df["loc_diff_avg"] < 0).sum() / n
-loc_worsen  = (df["loc_diff_avg"] > 0).sum() / n
+loc_improve = (df["loc_diff_avg"] < 0).sum() / n_commits
+loc_worsen  = (df["loc_diff_avg"] > 0).sum() / n_commits
 
 improvement_df = pd.DataFrame({
     "Improve (%)": [

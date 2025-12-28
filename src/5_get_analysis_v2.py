@@ -61,11 +61,23 @@ print()
 # Wilcoxon + Effect size (r)
 # =================================================
 def wilcoxon_effect_size(before, after):
-    stat, p = wilcoxon(before, after)
-    n = len(before)
-    z = (stat - n * (n + 1) / 4) / np.sqrt(
-        n * (n + 1) * (2 * n + 1) / 24
-    )
+    """
+    Calculate effect size r for Wilcoxon signed-rank test.
+    r = Z / sqrt(N)
+    """
+    diff = after - before
+    n = np.sum(diff != 0)  # Number of non-zero differences
+
+    # Edge case: no non-zero differences
+    if n == 0:
+        return np.nan, np.nan
+
+    # Use method='approx' to get z-statistic directly (scipy >= 1.9.0)
+    # wilcoxon(after, before) so positive z means after > before
+    result = wilcoxon(after, before, method='approx')
+    z = result.zstatistic
+    p = result.pvalue
+
     r = z / np.sqrt(n)
     return r, p
 
@@ -134,15 +146,15 @@ print()
 # =================================================
 # 改善・悪化割合
 # =================================================
-n = len(df)
+n_commits = len(df)
 
 def improvement_ratio(diff, improve_if="increase"):
     if improve_if == "increase":
-        improve = (diff > 0).sum() / n
-        worsen  = (diff < 0).sum() / n
+        improve = (diff > 0).sum() / n_commits
+        worsen  = (diff < 0).sum() / n_commits
     else:
-        improve = (diff < 0).sum() / n
-        worsen  = (diff > 0).sum() / n
+        improve = (diff < 0).sum() / n_commits
+        worsen  = (diff > 0).sum() / n_commits
     return improve * 100, worsen * 100
 
 rows = []
