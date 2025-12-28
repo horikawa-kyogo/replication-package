@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from scipy.stats import wilcoxon
+from scipy.stats import wilcoxon, norm
 from pathlib import Path
 
 # -----------------------------
@@ -31,9 +31,21 @@ print()
 # r = Z / sqrt(N)
 # -----------------------------
 def wilcoxon_effect_size(before, after):
+    """
+    Calculate effect size r for Wilcoxon signed-rank test.
+    r = Z / sqrt(N)
+    """
     stat, p = wilcoxon(before, after)
-    n = len(before)
-    z = (stat - n * (n + 1) / 4) / np.sqrt(n * (n + 1) * (2 * n + 1) / 24)
+    diff = after - before
+    n = np.sum(diff != 0)  # Number of non-zero differences
+
+    # Convert p-value to z-score (two-tailed test)
+    z = norm.ppf(1 - p / 2)
+
+    # Determine sign: positive z means after > before
+    if np.median(after - before) < 0:
+        z = -z
+
     r = z / np.sqrt(n)
     return r, p
 
