@@ -8,7 +8,8 @@ Specifically, we compute the following metrics at the commit level:
 
 - Maintainability Index (MI)
 - Cyclomatic Complexity (CC)
-- Lines of Code (LOC)
+- Lines of Code (LOC, LLOC, SLOC)
+- Halstead metric (Halstead Volume, Halstead Difficulty, Halstead Effort)
 
 Statistical significance is assessed using the Wilcoxon signed-rank test.
 
@@ -84,6 +85,8 @@ python src/5_get_analysis_v2.py
 | `src/1_get_commitNum.py`       | -                                                           | Number of commits selected for analysis      |
 | `src/2_get_commitsList.py`     | `data/processed/filtered_commits.csv`<br>`data/processed/filtered_commits.parquet` | Full list of commits extracted               |
 | `src/3_get_commitsList_231.py` | `data/results/filtered_commits_231.csv`                     | Randomly sampled commit list                  |
-| `src/4_download_commits.py`    | `data/processed/commit_summary_readability_3metrics.csv`   | Readability metrics per commit                |
-| `src/5_get_analysis.py`        | -                                                           | Statistical test results (Wilcoxon)          |
+| `src/4_download_commits.py`    | `data/processed/commit_summary_readability_3metrics.csv`   | Readability metrics per commit (MI, CC, LOC)              |
+| `src/4_download_commits_v2.py`    | `data/processed/commit_summary_readability_allmetrics.csv`   | Readability metrics per commit (all metrics)                |
+| `src/5_get_analysis.py`        | -                                                           | Statistical test results (Wilcoxon, etc.)       |
+| `src/5_get_analysis_v2.py`        | -                                                           | Statistical test results (Wilcoxon, etc.)        |
 
