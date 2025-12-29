@@ -47,6 +47,7 @@ data/raw/all_pull_request.parquet
 data/raw/pr_commit_details.parquet
 
 3. Run scripts in order:
+When analyzing all metrics, use the code marked "_v2".
 ・RQ1：Find the number of commits to analyze：
 ```bash
 python src/1_get_commitNum.py
@@ -63,9 +64,17 @@ python src/3_get_commitsList_231.py
 ```bash
 python src/4_download_commits.py
 ```
+or
+```bash
+python src/4_download_commits_v2.py
+```
 ・RQ3：Perform statistical analysis:
 ```bash
 python src/5_get_analysis.py
+```
+or
+```bash
+python src/5_get_analysis_v2.py
 ```
 
 ## 5. Outputs
