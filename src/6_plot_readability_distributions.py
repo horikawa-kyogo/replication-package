@@ -5,7 +5,7 @@ from pathlib import Path
 
 df = pd.read_csv("../data/processed/commit_summary_readability_3metrics.csv")
 # -----------------------------
-# 保存先ディレクトリ指定
+# Specify the destination directory
 # -----------------------------
 out_dir = Path("../figure")
 out_dir.mkdir(parents=True, exist_ok=True)
@@ -30,7 +30,7 @@ for ax, (name, before_col, after_col) in zip(axes, metrics):
     after  = df[after_col].dropna()
 
     # -------------------------
-    # split violin（中央）
+    # split violin
     # -------------------------
     plot_df = pd.DataFrame({
         "Value": pd.concat([before, after], ignore_index=True),
@@ -51,11 +51,11 @@ for ax, (name, before_col, after_col) in zip(axes, metrics):
     )
 
     # -------------------------
-    # 箱ひげ図（中央から外側へ）
+    # Boxplot
     # -------------------------
     ax.boxplot(
         before,
-        positions=[-0.16],      # ← 左へずらす
+        positions=[-0.16],      # ← Shift left
         widths=0.1,
         patch_artist=True,
         showfliers=False,
@@ -67,7 +67,7 @@ for ax, (name, before_col, after_col) in zip(axes, metrics):
 
     ax.boxplot(
         after,
-        positions=[0.16],       # ← 右へずらす
+        positions=[0.16],       # ← Shift right
         widths=0.1,
         patch_artist=True,
         showfliers=False,
@@ -78,7 +78,7 @@ for ax, (name, before_col, after_col) in zip(axes, metrics):
     )
 
     # -------------------------
-    # 平均値（箱ひげと同じ位置）
+    # Average
     # -------------------------
     ax.scatter(
         [-0.28, 0.28],
@@ -90,7 +90,7 @@ for ax, (name, before_col, after_col) in zip(axes, metrics):
     )
 
     # -------------------------
-    # 装飾
+    # Configure subplot appearance (title, axes, grid)
     # -------------------------
     ax.set_title(name, fontsize=18)
     ax.set_ylabel(name, fontsize=13)
@@ -101,15 +101,15 @@ for ax, (name, before_col, after_col) in zip(axes, metrics):
     if ax != axes[0]:
         ax.get_legend().remove()
 
-# 凡例
+# legend
 handles, labels = axes[0].get_legend_handles_labels()
 axes[0].legend(handles[:2], labels[:2], frameon=False, loc="upper right")
 
 plt.tight_layout()
 plt.savefig(
     out_dir / "mi_cc_loc_before_after_distribution.png",
-    dpi=300,                 # 論文品質
-    bbox_inches="tight",     # 余白を自動調整
-    facecolor="white"        # 背景白
+    dpi=300,                 # paper quality
+    bbox_inches="tight",     # adjust margins
+    facecolor="white"        # background
 )
 plt.show()
