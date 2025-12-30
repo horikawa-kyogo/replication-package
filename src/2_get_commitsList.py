@@ -48,7 +48,7 @@ filtered_commits.to_parquet(output_path_parquet)
 print(f"✅ Parquet Save completed: {output_path_parquet}（{len(filtered_commits)}件のコミット）")
 
 # --- CSV output ---
-# 必要なカラムだけ抽出（例: sha, message, pr_id, repo_url）
+# Extract only the necessary columns（ex: sha, message, pr_id, repo_url）
 columns_to_export = ["sha", "message", "pr_id", "repo_url"]
 filtered_commits[columns_to_export].to_csv(
     output_path_csv, index=False, encoding="utf-8-sig"
