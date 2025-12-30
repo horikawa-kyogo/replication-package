@@ -7,40 +7,40 @@ import tempfile
 import shutil
 from pathlib import Path
 
-# --- GitHub PAT（Private対応） ---
+# --- GitHub PAT ---
 GITHUB_PAT = os.environ.get("GITHUB_PAT", "")
 
-# --- データ読み込み ---
+# --- Data loading ---
 DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "raw"
 
 commits_df = pd.read_parquet(DATA_DIR / "pr_commits.parquet")
 prs_df = pd.read_parquet(DATA_DIR / "all_pull_request.parquet")
 details_df = pd.read_parquet(DATA_DIR / "pr_commit_details.parquet")
 
-# --- Pythonファイル変更コミット ---
+# --- Python file change commit ---
 py_commits = set(details_df[details_df["filename"].str.endswith(".py", na=False)]["sha"].unique())
 
-# --- キーワード ---
+# --- keyword ---
 keywords = [
     "readability", "readable", "understandability", "understandable",
     "clarity", "legibility", "easier to read", "comprehensible"
 ]
 
-# --- 対象コミット抽出 ---
+# --- Target commit extraction ---
 filtered = commits_df[
     commits_df["sha"].isin(py_commits) &
     commits_df["message"].fillna("").str.lower().apply(lambda m: any(kw in m for kw in keywords))
 ]
 
 if filtered.empty:
-    print("対象コミットなし")
+    print("No target commit")
     exit(0)
 
-# --- 一時ディレクトリ ---
+# --- temporary directory ---
 tmp_root = tempfile.mkdtemp(prefix="repo_radon_")
-print(f"🧰 一時ディレクトリ: {tmp_root}")
+print(f"🧰 temporary directory: {tmp_root}")
 
-# --- Radon解析関数 ---
+# --- Radon ---
 def analyze_code(code):
     try:
         mi = mi_visit(code, True)
@@ -48,14 +48,14 @@ def analyze_code(code):
         cc_total = sum(c.complexity for c in cc_list)
         return mi, cc_total
     except Exception as e:
-        print(f"⚠️ Radon解析失敗: {e}")
+        print(f"⚠️ Radon analysis failure: {e}")
         return None, None
 
-# --- LOC計算 ---
+# --- LOC ---
 def count_loc(code):
     return len(code.splitlines()) if code else 0
 
-# --- 結果リスト ---
+# --- Results list ---
 file_results = []
 summary_results = []
 
@@ -73,7 +73,7 @@ for idx, commit_row in filtered.iterrows():
     if "api.github.com/repos" in repo_url:
         repo_url = repo_url.replace("https://api.github.com/repos/", "https://github.com/") + ".git"
 
-    # --- PAT埋め込み ---
+    # --- PAT embedding ---
     if GITHUB_PAT and repo_url.startswith("https://github.com/"):
         parts = repo_url.split("https://github.com/")
         repo_url = f"https://{GITHUB_PAT}@github.com/{parts[1]}"
@@ -86,17 +86,17 @@ for idx, commit_row in filtered.iterrows():
         res = subprocess.run(["git", "clone", repo_url, repo_dir],
                              capture_output=True, text=True, encoding="utf-8", errors="ignore")
         if res.returncode != 0:
-            print(f"❌ Clone失敗: {repo_url}")
+            print(f"❌ Clone failed: {repo_url}")
             continue
 
-    # --- 親コミット取得 ---
+    # --- Get parent commit ---
     parent_res = subprocess.run(["git", "rev-parse", f"{sha}^"],
                                 cwd=repo_dir, capture_output=True, text=True, encoding="utf-8", errors="ignore")
     parent_sha = parent_res.stdout.strip() if parent_res.returncode == 0 else None
     if not parent_sha:
         continue
 
-    # --- Pythonファイル差分 ---
+    # --- Python file difference ---
     diff_res = subprocess.run(["git", "diff", "--name-only", parent_sha, sha],
                               cwd=repo_dir, capture_output=True, text=True, encoding="utf-8", errors="ignore")
     py_files = [f for f in diff_res.stdout.splitlines() if f.endswith(".py")]
@@ -108,14 +108,14 @@ for idx, commit_row in filtered.iterrows():
     loc_before_list, loc_after_list = [], []
 
     for f in py_files:
-        # --- 親コミットコード ---
+        # --- Parent commit code ---
         before_res = subprocess.run(["git", "show", f"{parent_sha}:{f}"],
                                     cwd=repo_dir, capture_output=True, text=True, encoding="utf-8", errors="ignore")
         before_code = before_res.stdout
         mi_before, cc_before = analyze_code(before_code)
         loc_before = count_loc(before_code)
 
-        # --- 対象コミットコード ---
+        # --- Target commit code ---
         after_res = subprocess.run(["git", "show", f"{sha}:{f}"],
                                    cwd=repo_dir, capture_output=True, text=True, encoding="utf-8", errors="ignore")
         after_code = after_res.stdout
@@ -162,15 +162,15 @@ for idx, commit_row in filtered.iterrows():
             "loc_diff_avg": sum([a-b for a, b in zip(loc_after_list, loc_before_list)]) / len(loc_before_list)
         })
 
-# --- CSV 保存 ---
+# ---CSV save ---
 #file_csv = "commit_file_readability_3metrics.csv"
 summary_csv = "../data/processed/commit_summary_readability_3metrics.csv"
 #pd.DataFrame(file_results).to_csv(file_csv, index=False)
 pd.DataFrame(summary_results).to_csv(summary_csv, index=False)
 
-#print(f"✅ ファイルごとの結果保存: {file_csv}（{len(file_results)}件）")
-print(f"✅ コミットごとの集計結果保存: {summary_csv}（{len(summary_results)}件）")
+#print(f"✅ Save results per file: {file_csv}（{len(file_results)}）")
+print(f"✅ Save aggregate results for each commit: {summary_csv}（{len(summary_results)}）")
 
-# --- 作業ディレクトリ削除 ---
+# --- Delete working directory ---
 shutil.rmtree(tmp_root, ignore_errors=True)
-print("🧹 一時ディレクトリ削除完了")
+print("🧹 Temporary directory deleted")
