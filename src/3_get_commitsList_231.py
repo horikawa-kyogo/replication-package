@@ -1,21 +1,21 @@
 import pandas as pd
 
-# --- 入力ファイル ---
+# --- Input file ---
 input_csv = "../data/processed/filtered_commits.csv"
 
-# --- 件数指定（変数で指定） ---
-N = 231  # ここを好きな件数に変更可能
+# --- Specify the number of items  ---
+N = 231
 
-# --- CSV 読み込み ---
+# --- CSV loading ---
 df = pd.read_csv(input_csv)
 
-# --- ランダムに N 件抽出 ---
-subset_df = df.sample(n=N)  # random_stateで再現性を保持
+# --- Randomly select N items ---
+subset_df = df.sample(n=N)  # Maintaining reproducibility with random_state
 
-# --- 出力ファイル名に件数を埋め込む ---
+# --- Embed the number in the output file name ---
 output_csv = f"../data/results/filtered_commits_{N}.csv"
 
-# --- 保存 ---
+# --- Save ---
 subset_df.to_csv(output_csv, index=False, encoding="utf-8-sig")
 
-print(f"✅ CSV保存完了: {output_csv}（{len(subset_df)}件）")
+print(f"✅ CSV Save completed: {output_csv}（{len(subset_df)}件）")
