@@ -4,7 +4,7 @@ from pathlib import Path
 
 # --- output file path ---
 output_path_parquet = "../data/processed/filtered_commits.parquet"
-output_path_csv = "../data/processed/filtered_commits.csv"  # CSV出力先
+output_path_csv = "../data/processed/filtered_commits.csv"  # CSV output path
 
 # --- Loading data ---
 DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "raw"
@@ -45,12 +45,12 @@ if output_dir:
     os.makedirs(output_dir, exist_ok=True)
 
 filtered_commits.to_parquet(output_path_parquet)
-print(f"✅ Parquet Save completed: {output_path_parquet}（{len(filtered_commits)}件のコミット）")
+print(f"✅ Parquet Save completed: {output_path_parquet} ({len(filtered_commits)}commits)")
 
 # --- CSV output ---
-# Extract only the necessary columns（ex: sha, message, pr_id, repo_url）
+# Extract only the necessary columns (e.g., sha, message, pr_id, repo_url)
 columns_to_export = ["sha", "message", "pr_id", "repo_url"]
 filtered_commits[columns_to_export].to_csv(
     output_path_csv, index=False, encoding="utf-8-sig"
 )
-print(f"✅ CSV Save completed: {output_path_csv}（{len(filtered_commits)}件のコミット）")
+print(f"✅ CSV Save completed: {output_path_csv} ({len(filtered_commits)}commits )")
