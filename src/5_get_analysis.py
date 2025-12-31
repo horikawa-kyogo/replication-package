@@ -21,7 +21,7 @@ df["single_comments_before_avg"] = df["single_comments_before_avg"].clip(lower=0
 df["single_comments_after_avg"] = df["single_comments_after_avg"].clip(lower=0)
 
 # =================================================
-# diff（after - before）
+# diff (after - before)
 # =================================================
 diff_metrics = [
     "mi", "cc",
