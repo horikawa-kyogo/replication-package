@@ -8,7 +8,7 @@ Specifically, we compute the following metrics at the commit level:
 
 - Maintainability Index (MI)
 - Cyclomatic Complexity (CC)
-- Lines of Code (LOC, LLOC, SLOC)
+- Lines of Code (LOC, LLOC, SLOC, Comment lines, Multi comments, Single comments)
 - Halstead metric (Halstead Volume, Halstead Difficulty, Halstead Effort)
 
 Statistical significance is assessed using the Wilcoxon signed-rank test.
@@ -48,7 +48,6 @@ data/raw/all_pull_request.parquet
 data/raw/pr_commit_details.parquet
 
 3. Run scripts in order:
-When analyzing all metrics, use the code marked "_v2".
 ・RQ1：Find the number of commits to analyze：
 ```bash
 python src/1_get_commitNum.py
@@ -65,17 +64,13 @@ python src/3_get_commitsList_231.py
 ```bash
 python src/4_download_commits.py
 ```
-or
+If you encounter a ''Too many requests'' error while running 'python src/4_download_commits.py', stop executing 'python src/4_download_commits.py'. Wait one hour, then run 'python src/4_download_commits_2.py' using the command below. You can resume from where you left off.
 ```bash
-python src/4_download_commits_v2.py
+python src/4_download_commits_2.py
 ```
 ・RQ3：Perform statistical analysis:
 ```bash
 python src/5_get_analysis.py
-```
-or
-```bash
-python src/5_get_analysis_v2.py
 ```
 
 ## 5. Outputs
@@ -85,8 +80,7 @@ python src/5_get_analysis_v2.py
 | `src/1_get_commitNum.py`       | -                                                           | Number of commits selected for analysis      |
 | `src/2_get_commitsList.py`     | `data/processed/filtered_commits.csv`<br>`data/processed/filtered_commits.parquet` | Full list of commits extracted               |
 | `src/3_get_commitsList_231.py` | `data/results/filtered_commits_231.csv`                     | Randomly sampled commit list                  |
-| `src/4_download_commits.py`    | `data/processed/commit_summary_readability_3metrics.csv`   | Readability metrics per commit (MI, CC, LOC)              |
-| `src/4_download_commits_v2.py`    | `data/processed/commit_summary_readability_allmetrics.csv`   | Readability metrics per commit (all metrics)                |
-| `src/5_get_analysis.py`        | -                                                           | Statistical test results (Wilcoxon, etc.)       |
-| `src/5_get_analysis_v2.py`        | -                                                           | Statistical test results (Wilcoxon, etc.)        |
+| `src/4_download_commits.py`    |  `data/processed/commit_summary_readability_allmetrics.csv`   | Readability metrics per commit  (all metrics)               |
+| `src/4_download_commits.py`    |  `data/processed/commit_summary_readability_allmetrics.csv`   | Readability metrics per commit  (all metrics)               |
+| `src/5_get_analysis.py`        | -                                                           | Statistical test results (mean, median, cliff's delta, Wilcoxon, etc.)       |
 
