@@ -2,110 +2,155 @@ import pandas as pd
 import numpy as np
 from scipy.stats import wilcoxon
 
-# -----------------------------
-# データ読み込み
-# -----------------------------
-df = pd.read_csv("../data/processed/commit_summary_readability_3metrics.csv")
+# =================================================
+# Data loading
+# =================================================
+df = pd.read_csv("../data/processed/commit_summary_readability_allmetrics.csv")
 
-# -----------------------------
-# 平均値・中央値の算出
-# -----------------------------
-metrics = [
-    "mi_before_avg", "mi_after_avg", "mi_diff_avg",
-    "cc_before_avg", "cc_after_avg", "cc_diff_avg",
-    "loc_before_avg", "loc_after_avg", "loc_diff_avg"
+# =================================================
+# single_comments
+# =================================================
+df["single_comments_before_avg"] = (
+    df["comments_before_avg"] - df["multi_before_avg"]
+)
+df["single_comments_after_avg"] = (
+    df["comments_after_avg"] - df["multi_after_avg"]
+)
+
+df["single_comments_before_avg"] = df["single_comments_before_avg"].clip(lower=0)
+df["single_comments_after_avg"] = df["single_comments_after_avg"].clip(lower=0)
+
+# =================================================
+# diff（after - before）
+# =================================================
+diff_metrics = [
+    "mi", "cc",
+    "loc", "lloc", "sloc",
+    "comments", "single_comments", "multi", "blank",
+    "h_volume", "h_difficulty", "h_effort"
 ]
+
+for m in diff_metrics:
+    df[f"{m}_diff_avg"] = df[f"{m}_after_avg"] - df[f"{m}_before_avg"]
+
+# =================================================
+# Mean and median
+# =================================================
+metrics = []
+for m in diff_metrics:
+    metrics.extend([
+        f"{m}_before_avg",
+        f"{m}_after_avg",
+        f"{m}_diff_avg"
+    ])
 
 summary_stats = pd.DataFrame({
     "Mean": df[metrics].mean(),
     "Median": df[metrics].median()
-}).round(2)   # 小数第2位
+}).round(2)
 
 print("=== Mean & Median ===")
 print(summary_stats)
 print()
 
-# -----------------------------
-# Effect size (r) の算出
-# r = Z / sqrt(N)
-# -----------------------------
-def wilcoxon_effect_size(before, after):
+# =================================================
+# Cliff's delta（paired）
+# =================================================
+def cliffs_delta_paired(before, after):
     """
-    Calculate effect size r for Wilcoxon signed-rank test.
-    r = Z / sqrt(N)
+    Paired Cliff's delta.
+    delta = ( #after>before - #after<before ) / N_nonzero
     """
     diff = after - before
-    n = np.sum(diff != 0)  # Number of non-zero differences
+    diff = diff[diff != 0]
+    n = len(diff)
 
-    # Edge case: no non-zero differences
     if n == 0:
-        return np.nan, np.nan
+        return np.nan
 
-    # Use method='approx' to get z-statistic directly (scipy >= 1.9.0)
-    # wilcoxon(after, before) so positive z means after > before
-    result = wilcoxon(after, before, method='approx')
-    z = result.zstatistic
-    p = result.pvalue
+    gt = np.sum(diff > 0)
+    lt = np.sum(diff < 0)
 
-    r = z / np.sqrt(n)
-    return r, p
+    return (gt - lt) / n
 
-effect_sizes = {}
+# =================================================
+# Wilcoxon p-value + Cliff's delta
+# =================================================
+rows = []
+for m in diff_metrics:
+    before = df[f"{m}_before_avg"]
+    after  = df[f"{m}_after_avg"]
 
-effect_sizes["MI_r"], effect_sizes["MI_p"] = wilcoxon_effect_size(
-    df["mi_before_avg"], df["mi_after_avg"]
-)
-effect_sizes["CC_r"], effect_sizes["CC_p"] = wilcoxon_effect_size(
-    df["cc_before_avg"], df["cc_after_avg"]
-)
-effect_sizes["LOC_r"], effect_sizes["LOC_p"] = wilcoxon_effect_size(
-    df["loc_before_avg"], df["loc_after_avg"]
-)
+    # p-value
+    try:
+        p = wilcoxon(after, before, method="approx").pvalue
+    except ValueError:
+        p = np.nan
 
-effect_df = pd.DataFrame.from_dict(
-    effect_sizes, orient="index", columns=["Value"]
-)
+    # effect size
+    delta = cliffs_delta_paired(before, after)
 
-# r は小数第2位、p-value はそのまま
-effect_df.loc[effect_df.index.str.endswith("_r")] = \
-    effect_df.loc[effect_df.index.str.endswith("_r")].astype(float).round(2)
+    rows.append((m, delta, p))
 
-effect_df.loc[effect_df.index.str.endswith("_p")] = \
-    effect_df.loc[effect_df.index.str.endswith("_p")].astype(float)
+effect_df = pd.DataFrame(
+    rows, columns=["Metric", "Cliff's delta", "p-value"]
+).set_index("Metric")
 
-print("=== Effect Size (r) & p-value ===")
+def format_delta(x):
+    return f"{x:.2f}" if pd.notna(x) else "–"
+
+def format_p(x):
+    if pd.isna(x):
+        return "–"
+    return "<0.001" if x < 0.001 else f"{x:.3f}"
+
+effect_df["Effect size"] = effect_df["Cliff's delta"].apply(format_delta)
+effect_df["p-value"] = effect_df["p-value"].apply(format_p)
+effect_df = effect_df[["Effect size", "p-value"]]
+
+print("=== Cliff's delta & p-value ===")
 print(effect_df)
 print()
 
-# -----------------------------
-# 改善・悪化割合
-# -----------------------------
+# =================================================
+# Improvement/worsening rate
+# =================================================
 n_commits = len(df)
 
-# MI：増加が改善
-mi_improve = (df["mi_diff_avg"] > 0).sum() / n_commits
-mi_worsen  = (df["mi_diff_avg"] < 0).sum() / n_commits
+def improvement_ratio(diff, improve_if="increase"):
+    if improve_if == "increase":
+        improve = (diff > 0).sum() / n_commits
+        worsen  = (diff < 0).sum() / n_commits
+    else:
+        improve = (diff < 0).sum() / n_commits
+        worsen  = (diff > 0).sum() / n_commits
+    return improve * 100, worsen * 100
 
-# CC：減少が改善
-cc_improve = (df["cc_diff_avg"] < 0).sum() / n_commits
-cc_worsen  = (df["cc_diff_avg"] > 0).sum() / n_commits
+improve_policy = {
+    "mi": "increase",
+    "cc": "decrease",
+    "loc": "decrease",
+    "lloc": "decrease",
+    "sloc": "decrease",
+    "comments": "increase",
+    "single_comments": "increase",
+    "multi": "decrease",
+    "blank": "neutral",
+    "h_volume": "decrease",
+    "h_difficulty": "decrease",
+    "h_effort": "decrease",
+}
 
-# LOC：減少が改善
-loc_improve = (df["loc_diff_avg"] < 0).sum() / n_commits
-loc_worsen  = (df["loc_diff_avg"] > 0).sum() / n_commits
+rows = []
+for m, policy in improve_policy.items():
+    if policy == "neutral":
+        continue
+    imp, wors = improvement_ratio(df[f"{m}_diff_avg"], policy)
+    rows.append((m, imp, wors))
 
-improvement_df = pd.DataFrame({
-    "Improve (%)": [
-        mi_improve * 100,
-        cc_improve * 100,
-        loc_improve * 100
-    ],
-    "Worsen (%)": [
-        mi_worsen * 100,
-        cc_worsen * 100,
-        loc_worsen * 100
-    ]
-}, index=["MI", "CC", "LOC"]).round(1)   # 小数第1位（％）
+improvement_df = pd.DataFrame(
+    rows, columns=["Metric", "Improve (%)", "Worsen (%)"]
+).set_index("Metric").round(1)
 
 print("=== Improvement / Worsening Ratio ===")
 print(improvement_df)
