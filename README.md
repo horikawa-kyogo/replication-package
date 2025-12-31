@@ -60,6 +60,9 @@ python src/2_get_commitsList.py
 ```bash
 python src/3_get_commitsList_231.py
 ```
+The results and analysis code for RQ2 are available at the following repository:
+https://github.com/Mont9165/multi-label-calc/tree/main
+
 ・RQ3：Calculate readability metrics:
 ```bash
 python src/4_download_commits.py
