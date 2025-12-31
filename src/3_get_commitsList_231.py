@@ -18,4 +18,4 @@ output_csv = f"../data/results/filtered_commits_{N}.csv"
 # --- Save ---
 subset_df.to_csv(output_csv, index=False, encoding="utf-8-sig")
 
-print(f"✅ CSV Save completed: {output_csv}（{len(subset_df)}件）")
+print(f"✅ CSV Save completed: {output_csv} ({len(subset_df)}commits)")
