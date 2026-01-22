@@ -61,8 +61,10 @@ python src/2_get_commitsList.py
 python src/3_get_commitsList_231.py
 ```
 The results and analysis code for RQ2 are available at the following repository:
-https://github.com/Mont9165/multi-label-calc/tree/main　　
-In addition, the randomly sampled commits were manually inspected and mapped to the predefined readability categories using a closed card sorting approach.　
+https://github.com/Mont9165/multi-label-calc/tree/main
+
+In addition, the randomly sampled commits were manually inspected and mapped to the predefined readability categories using a closed card sorting approach.
+
 ・RQ3：Calculate readability metrics:
 ```bash
 python src/4_download_commits.py
